@@ -1,7 +1,9 @@
-const Path = require("path"),
-  { to } = require("await-to-js");
+const Path = require('path'),
+  { to } = require('await-to-js');
 
-const ffmpeg = require("fluent-ffmpeg");
+const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg'),
+  ffmpeg = require('fluent-ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const {
   statAsync,
@@ -10,20 +12,21 @@ const {
   readFileAsync,
   writeFileAsync,
   accessAsync,
-} = require("./utils");
+} = require('./utils');
 
 (async () => {
-  const output = "./copy";
+  const output = './compose';
 
   const [err] = await to(statAsync(output));
   err && (await to(mkdirAsync(output)));
 
   // 根据JSON生成文件目录
-  const dirBuffer = await readFileAsync("./dir.json");
-  const dirJson = JSON.parse(dirBuffer.toString());
+  // const dirBuffer = await readFileAsync('./dir.json');
+  // const dirJson = JSON.parse(dirBuffer.toString());
+  const dirJson = require('./dir.json');
   const ProDirs = Object.keys(dirJson);
   await to(
-    Promise.all(ProDirs.map((ProDir) => mkdirAsync(Path.join(output, ProDir))))
+    Promise.all(ProDirs.map(ProDir => mkdirAsync(Path.join(output, ProDir))))
   );
 
   var ffmpegVideo = (() => {
@@ -34,7 +37,7 @@ const {
       if (ProDirsIndex === ProDirs.length) {
         console.log(
           `已经全部合成完成，共计${ProDirs.length}个视频，共计${
-            ProDirs.map((ProDir) => dirJson[ProDir]).flat().length
+            ProDirs.map(ProDir => dirJson[ProDir]).flat().length
           } P`
         );
       } else {
@@ -48,18 +51,18 @@ const {
           const filePath = Path.join(
             output,
             ProDirs[ProDirsIndex],
-            videoName + ".mp4"
+            videoName + '.mp4'
           );
           const [err] = await to(accessAsync(filePath));
           // 二次执行：如果没有找到已经生成的视频，就执行合成
           if (err) {
             console.log(
-              "正在合成：" + ProDirs[ProDirsIndex] + "目录下的" + videoName
+              '正在合成：' + ProDirs[ProDirsIndex] + '目录下的' + videoName
             );
             const [err] = await to(
               runFfmpeg(
-                Path.join(...dir, "video.m4s"),
-                Path.join(...dir, "audio.m4s"),
+                Path.join(...dir, 'video.m4s'),
+                Path.join(...dir, 'audio.m4s'),
                 filePath
               )
             );
@@ -69,10 +72,11 @@ const {
               }
               errFiles[ProDirs[ProDirsIndex]].push(vDirs[vDirsIndex]);
 
-              console.log(videoName + "合成失败");
+              console.log(videoName + '合成失败');
               console.log(errFiles);
+              console.log(err);
               await writeFileAsync(
-                "./errCopyLog.json",
+                './errCopyLog.json',
                 Buffer.from(JSON.stringify(errFiles))
               );
             }
@@ -92,23 +96,25 @@ function runFfmpeg(video, audio, output) {
   return new Promise((resolve, reject) => {
     ffmpeg(video)
       .input(audio)
-      .on("progress", (progress) => {
-        console.log("Processing: " + progress.percent + "%");
+      .on('progress', progress => {
+        if (progress.percent) {
+          console.log('Processing: ' + progress.percent + '%');
+        }
         if (progress.percent >= 100) {
           resolve();
         }
       })
-      .on("error", (err) => {
+      .on('error', err => {
         if (err) {
-          console.log("Error transcoding file");
+          console.log('Error transcoding file');
         }
         reject(err);
       })
-      .on("end", () => {
-        console.log("Finished processing");
+      .on('end', () => {
+        console.log('Finished processing');
         resolve();
       })
-      .outputOptions("-c copy")
+      .outputOptions('-c copy')
       .output(output)
       .run();
   });
