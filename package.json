@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "node ./index.js"
+  },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "await-to-js": "^3.0.0",

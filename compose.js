@@ -1,3 +1,6 @@
+/**
+ * @method 读取dir.json，遍历处理，将download文件夹中的video.m4s和audio.m4s合并成.mp4文件
+ **/
 const Path = require('path'),
   { to } = require('await-to-js');
 
@@ -8,23 +11,25 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 const {
   statAsync,
   mkdirAsync,
-  readdirAsync,
-  readFileAsync,
+  // readdirAsync,
+  // readFileAsync,
   writeFileAsync,
   accessAsync,
 } = require('./utils');
 
-(async () => {
-  const output = './compose';
+// 根据JSON生成文件目录
+// const dirBuffer = await readFileAsync('./dir.json');
+// const dirJson = JSON.parse(dirBuffer.toString());
+// const dirJson = require('./dir.json');
 
+module.exports = async (dirJson, output) => {
+  const ProDirs = Object.keys(dirJson);
+
+  // 检查 输出 文件夹是否存在，如果不存在则创建
   const [err] = await to(statAsync(output));
   err && (await to(mkdirAsync(output)));
 
-  // 根据JSON生成文件目录
-  // const dirBuffer = await readFileAsync('./dir.json');
-  // const dirJson = JSON.parse(dirBuffer.toString());
-  const dirJson = require('./dir.json');
-  const ProDirs = Object.keys(dirJson);
+  // 创建 输出 目录文件夹结构
   await to(
     Promise.all(ProDirs.map(ProDir => mkdirAsync(Path.join(output, ProDir))))
   );
@@ -43,7 +48,7 @@ const {
       } else {
         const vDirs = dirJson[ProDirs[ProDirsIndex]];
         if (vDirsIndex === vDirs.length) {
-          // console.log(ProDirs[ProDirsIndex] + "已经全部合成完成");
+          console.log(ProDirs[ProDirsIndex] + '已经全部合成完成');
           ProDirsIndex++;
           vDirsIndex = 0;
         } else {
@@ -54,6 +59,9 @@ const {
             videoName + '.mp4'
           );
           const [err] = await to(accessAsync(filePath));
+          if (!errFiles[ProDirs[ProDirsIndex]]) {
+            errFiles[ProDirs[ProDirsIndex]] = [];
+          }
           // 二次执行：如果没有找到已经生成的视频，就执行合成
           if (err) {
             console.log(
@@ -67,22 +75,19 @@ const {
               )
             );
             if (err) {
-              if (!errFiles[ProDirs[ProDirsIndex]]) {
-                errFiles[ProDirs[ProDirsIndex]] = [];
-              }
-              errFiles[ProDirs[ProDirsIndex]].push(vDirs[vDirsIndex]);
-
-              console.log(videoName + '合成失败');
-              console.log(errFiles);
+              errFiles[ProDirs[ProDirsIndex]].push([
+                vDirs[vDirsIndex],
+                '合成失败',
+              ]);
               console.log(err);
-              await writeFileAsync(
-                './errCopyLog.json',
-                Buffer.from(JSON.stringify(errFiles))
-              );
             }
           } else {
-            // console.log(videoName + "已存在");
+            // errFiles[ProDirs[ProDirsIndex]].push([dir, '已存在']);
           }
+          await writeFileAsync(
+            './err.log.json',
+            Buffer.from(JSON.stringify(errFiles))
+          );
           vDirsIndex++;
         }
         ffmpegVideo();
@@ -90,7 +95,7 @@ const {
     };
   })();
   ffmpegVideo();
-})();
+};
 
 function runFfmpeg(video, audio, output) {
   return new Promise((resolve, reject) => {
