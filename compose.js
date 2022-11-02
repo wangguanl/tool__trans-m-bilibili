@@ -1,5 +1,5 @@
 /**
- * @method 读取dir.json，遍历处理，将download文件夹中的video.m4s和audio.m4s合并成.mp4文件
+ * @method 读取dir.json或接收一个json，遍历处理download文件夹中的video.m4s和audio.m4s合并成.mp4文件
  **/
 const Path = require('path'),
   { to } = require('await-to-js');
