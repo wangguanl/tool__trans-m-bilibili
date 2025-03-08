@@ -2,3 +2,6 @@ dist
 download
 node_modules
 err.log.json
+yarn.lock
+.vscode
+.dirJson.json

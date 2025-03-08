@@ -1,7 +1,7 @@
 # 把手机B站缓存的视频转成MP4
 
 ## 操作步骤
-1. 将手机B站缓存的视频转存到此目录的`download`：在`Android -> data -> tv.danmaku.bili -> download`
+1. 将手机B站缓存的视频转存到此目录的`download`：在`Android -> data -> tv.danmaku.bili -> download`(`Android\data\tv.danmaku.bili\download`)
 2. 安装依赖 & 执行命令，会将视频转到 `compose` 文件夹中。
 ```bash
 yarn
